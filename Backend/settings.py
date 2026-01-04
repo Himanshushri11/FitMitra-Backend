@@ -48,6 +48,9 @@ INSTALLED_APPS = [
     "fitness",
     "ai",
     "common",
+    "explore",
+    "admin_panel",
+    "support",
 ]
 
 # --------------------------------------------------

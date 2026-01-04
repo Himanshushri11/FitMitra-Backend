@@ -48,6 +48,20 @@ class LoginView(APIView):
         if not user:
             return Response({"error": "Invalid credentials"}, status=401)
 
+        # Record login log
+        from admin_panel.models import LoginLog
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        
+        LoginLog.objects.create(
+            user=user,
+            ip_address=ip,
+            user_agent=request.META.get('HTTP_USER_AGENT', '')
+        )
+
         refresh = RefreshToken.for_user(user)
         return Response({
             "access": str(refresh.access_token),

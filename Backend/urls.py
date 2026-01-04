@@ -6,7 +6,9 @@ urlpatterns = [
     path("api/accounts/", include("accounts.urls")),
     path("api/fitness/", include("fitness.urls")),
     path("api/ai/", include("ai.urls")),
-    # path("api/common/", include("common.urls")),
+    path("api/explore/", include("explore.urls")),
+    path("api/admin-panel/", include("admin_panel.urls")),
+    path('api/support/', include('support.urls')),
 ]
 
 # Serve media files in development
