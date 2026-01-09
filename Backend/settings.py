@@ -149,23 +149,18 @@ WSGI_APPLICATION = "Backend.wsgi.application"
 # --------------------------------------------------
 # DATABASE (PostgreSQL)
 # --------------------------------------------------
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'), # Fallback to sqlite if no URL
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
-# Fallback for local development if DATABASE_URL not set but specific args wanted
-if not os.getenv('DATABASE_URL'):
+if os.getenv('DATABASE_URL'):
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": "fitmitra_db",
-            "USER": "postgres",
-            "PASSWORD": "#anshu11",
-            "HOST": "localhost",
-            "PORT": "5432",
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
