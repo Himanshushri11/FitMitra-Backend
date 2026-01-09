@@ -8,6 +8,8 @@ import os
 from dotenv import load_dotenv
 import warnings
 
+import dj_database_url
+
 # --------------------------------------------------
 # BASE
 # --------------------------------------------------
@@ -21,12 +23,12 @@ load_dotenv(BASE_DIR / '.env.local', override=True)
 # SECURITY
 # --------------------------------------------------
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-dev-key")
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # --------------------------------------------------
 # APPLICATIONS
@@ -78,12 +80,14 @@ MIDDLEWARE = [
 # --------------------------------------------------
 # CORS CONFIG (REACT FIX)
 # --------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True # Allow all for now in prod to simplify, or restrict if domain known
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+if RENDER_EXTERNAL_HOSTNAME:
+     CORS_ALLOWED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -112,7 +116,10 @@ CORS_ALLOW_METHODS = [
 # --------------------------------------------------
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
 
 # --------------------------------------------------
 # URL & TEMPLATES
@@ -141,15 +148,24 @@ WSGI_APPLICATION = "Backend.wsgi.application"
 # DATABASE (PostgreSQL)
 # --------------------------------------------------
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "fitmitra_db",
-        "USER": "postgres",
-        "PASSWORD": "#anshu11",
-        "HOST": "localhost",
-        "PORT": "5432",
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'), # Fallback to sqlite if no URL
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
+# Fallback for local development if DATABASE_URL not set but specific args wanted
+if not os.getenv('DATABASE_URL'):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "fitmitra_db",
+            "USER": "postgres",
+            "PASSWORD": "#anshu11",
+            "HOST": "localhost",
+            "PORT": "5432",
+        }
+    }
 
 # --------------------------------------------------
 # AUTH
