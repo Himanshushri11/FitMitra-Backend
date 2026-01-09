@@ -81,7 +81,7 @@ MIDDLEWARE = [
 # --------------------------------------------------
 # CORS CONFIG (REACT FIX)
 # --------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = True # Allow all for now in prod to simplify, or restrict if domain known
+CORS_ALLOW_ALL_ORIGINS = False # Must be False if using credentials
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
