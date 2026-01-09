@@ -12,7 +12,10 @@ import warnings
 # BASE
 # --------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv()
+# Look in Backend folder, then Root folder
+load_dotenv(BASE_DIR / '.env', override=True)
+load_dotenv(BASE_DIR.parent / '.env', override=True)
+load_dotenv(BASE_DIR / '.env.local', override=True)
 
 # --------------------------------------------------
 # SECURITY
@@ -51,6 +54,8 @@ INSTALLED_APPS = [
     "explore",
     "admin_panel",
     "support",
+    "social",
+    "gym_management",
 ]
 
 # --------------------------------------------------
@@ -66,6 +71,7 @@ MIDDLEWARE = [
 
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "gym_management.middleware.GymOwnerPaymentMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
@@ -169,7 +175,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
@@ -226,3 +232,8 @@ from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-csrftoken",
 ]
+# --------------------------------------------------
+# RAZORPAY
+# --------------------------------------------------
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_YourKeyHere")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "YourSecretHere")

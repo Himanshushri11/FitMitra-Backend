@@ -21,8 +21,10 @@ class AIChatAPIView(APIView):
         if not message:
             return Response({"error": "Message required"}, status=400)
 
+        context = request.data.get("context", {})
+
         try:
-            reply = get_gemini_response(message, user_goal)
+            reply = get_gemini_response(message, user_goal, context=context)
             return Response({
                 "type": "ai",
                 "reply": reply

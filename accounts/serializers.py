@@ -12,9 +12,10 @@ class ProfileSerializer(serializers.ModelSerializer):
             "id", "username", "email", "profile_pic", "bio", 
             "age", "gender", "height", "weight", 
             "goal", "fitness_level", 
-            "workouts_completed", "calories_burned", "current_streak"
+            "workouts_completed", "calories_burned", "current_streak", "achievements_count",
+            "role"
         ]
-        read_only_fields = ['username', 'email', 'workouts_completed', 'calories_burned', 'current_streak']
+        read_only_fields = ['id', 'username', 'email', 'profile_pic', 'workouts_completed', 'calories_burned', 'current_streak', 'achievements_count', 'role']
 
 class RegisterSerializer(serializers.ModelSerializer):
     age = serializers.IntegerField(required=False)
@@ -51,7 +52,54 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     # Simplified User serializer that includes profile info
     profile = ProfileSerializer(read_only=True)
+    gym_profile = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'is_staff', 'is_superuser', 'profile']
+        fields = ['id', 'username', 'email', 'is_staff', 'is_superuser', 'profile', 'gym_profile']
+
+    def get_gym_profile(self, obj):
+        try:
+            from gym_management.models import GymOwnerProfile
+            profile = GymOwnerProfile.objects.get(user=obj)
+            return {
+                "gym_name": profile.gym_name,
+                "payment_status": profile.payment_status
+            }
+        except:
+            return None
+class GymOwnerRegisterSerializer(serializers.ModelSerializer):
+    gym_name = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "password", "gym_name"]
+        extra_kwargs = {
+            "password": {"write_only": True}
+        }
+
+    def create(self, validated_data):
+        gym_name = validated_data.pop("gym_name")
+        
+        user = User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"]
+        )
+
+        from .models import Profile
+        from gym_management.models import GymOwnerProfile
+
+        # Update Profile Role
+        profile, created = Profile.objects.get_or_create(user=user)
+        profile.role = 'GYM_OWNER'
+        profile.save()
+
+        # Create GymOwnerProfile
+        GymOwnerProfile.objects.create(
+            user=user,
+            gym_name=gym_name
+        )
+
+        return user
+

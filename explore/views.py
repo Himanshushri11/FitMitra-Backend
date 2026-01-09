@@ -107,3 +107,78 @@ class GymViewSet(viewsets.ReadOnlyModelViewSet):
                 created_count += 1
         
         return Response({"message": f"Successfully seeded {created_count} gyms."}, status=status.HTTP_201_CREATED)
+
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from .models import Event, Challenge, Article, Trainer, UserEvent, UserChallenge
+from .serializers import EventSerializer, ChallengeSerializer, ArticleSerializer, TrainerSerializer
+
+class ExploreDashboardView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        # 1. Fetch Featured/Trending Data
+        # Recommendation Logic: In a real app, this would use ML or complex queries based on user profile
+        
+        # Events: Live first, then upcoming
+        events = Event.objects.filter(status__in=['live', 'upcoming']).order_by('start_time')[:5]
+        
+        # Challenges: Trending (most participants?) or new
+        # User goal personalization could happen here
+        challenges = Challenge.objects.all().order_by('-start_date')[:5]
+        
+        # Articles: Latest
+        articles = Article.objects.all().order_by('-created_at')[:5]
+        
+        # Trainers: Featured
+        trainers = Trainer.objects.all()[:5]
+
+        data = {
+            "events": EventSerializer(events, many=True, context={'request': request}).data,
+            "challenges": ChallengeSerializer(challenges, many=True, context={'request': request}).data,
+            "articles": ArticleSerializer(articles, many=True, context={'request': request}).data,
+            "trainers": TrainerSerializer(trainers, many=True).data,
+        }
+        return Response(data)
+
+class EventViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'description']
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def join(self, request, pk=None):
+        event = self.get_object()
+        user_event, created = UserEvent.objects.get_or_create(user=request.user, event=event)
+        if created:
+            event.participants_count += 1
+            event.save()
+            return Response({'status': 'joined'}, status=status.HTTP_200_OK)
+        return Response({'status': 'already_joined'}, status=status.HTTP_200_OK)
+
+class ChallengeViewSet(viewsets.ModelViewSet):
+    queryset = Challenge.objects.all()
+    serializer_class = ChallengeSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'description']
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def join(self, request, pk=None):
+        challenge = self.get_object()
+        user_challenge, created = UserChallenge.objects.get_or_create(user=request.user, challenge=challenge)
+        if created:
+            return Response({'status': 'joined'}, status=status.HTTP_200_OK)
+        return Response({'status': 'already_joined'}, status=status.HTTP_200_OK)
+
+class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+class TrainerViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Trainer.objects.all()
+    serializer_class = TrainerSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]

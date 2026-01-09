@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Profile
-from .serializers import RegisterSerializer, ProfileSerializer, UserSerializer
+from .serializers import RegisterSerializer, ProfileSerializer, UserSerializer, GymOwnerRegisterSerializer
 
 class SignupView(APIView):
     permission_classes = [AllowAny]
@@ -20,6 +20,23 @@ class SignupView(APIView):
         refresh = RefreshToken.for_user(user)
         return Response({
             "message": "Signup successful",
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": UserSerializer(user).data
+        }, status=201)
+
+class GymOwnerSignupView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = GymOwnerRegisterSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+        
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "message": "Gym Owner Signup successful",
             "access": str(refresh.access_token),
             "refresh": str(refresh),
             "user": UserSerializer(user).data

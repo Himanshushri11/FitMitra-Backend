@@ -679,12 +679,14 @@ I'm an advanced AI fitness trainer. For precise guidance, please ask specific qu
 Please elaborate your query! 🔬💪"""
 
 # ==================== MAIN FUNCTION ====================
-def get_gemini_response(user_message, user_goal="general fitness", history=None):
+def get_gemini_response(user_message, user_goal="general fitness", history=None, context=None):
     """
     Advanced professional AI trainer response
     """
     print(f"\n🎯 Processing: {user_message[:50]}...")
     print(f"🏆 Goal: {user_goal}")
+    if context:
+        print(f"📍 Context: {context}")
     
     # 1. Classify query
     intent_info = classify_query_intent(user_message)
@@ -710,6 +712,8 @@ def get_gemini_response(user_message, user_goal="general fitness", history=None)
             
             # Create professional elite trainer prompt
             language = intent_info['language']
+            page_context = f"- Current Page: {context.get('page', 'Unknown')}" if context else ""
+            
             prompt = f"""You are Fitty, an elite AI fitness trainer, wellness coach, and planning assistant with 10+ years of professional experience, designed to work inside the "FitMitra" application.
 
 You must behave at the same intelligence, clarity, and response quality level as ChatGPT, while maintaining the personality of a highly skilled, friendly, and motivating personal trainer.
@@ -718,6 +722,7 @@ USER CONTEXT:
 - Fitness Goal: {user_goal}
 - Current Query: "{user_message}"
 - Language: {language}
+{page_context}
 
 CORE MISSION:
 Provide fully personalized fitness guidance, workout plans, and nutrition advice. Your goal is to make the user feel like they are guided by a real expert who genuinely cares about their progress.
